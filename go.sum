@@ -19,8 +19,8 @@ github.com/kelseyhightower/envconfig v1.4.0 h1:Im6hONhd3pLkfDFsbRgu68RDNkGF1r3dv
 github.com/kelseyhightower/envconfig v1.4.0/go.mod h1:cccZRl6mQpaq41TPp5QxidR+Sa3axMbJDNb//FQX6Gg=
 github.com/lukasl-dev/waterlink v1.1.3 h1:t1xQdfngxFao5Z2XsM49zZD2ZYkIR7yxOUgPNIkeO4I=
 github.com/lukasl-dev/waterlink v1.1.3/go.mod h1:iCtCe9iu9NOXqFgaXEH54Q97PpMCkyShYS+5pyMI3Hs=
-github.com/nint8835/parsley v1.0.0 h1:VBhpeQl/dOasYEOY7DqELtvr3eS2pyLiAULvThsFOnE=
-github.com/nint8835/parsley v1.0.0/go.mod h1:2R+cXHN1chnxFV/nNCfn0XsI+jusZryIpNDDMpGIfb0=
+github.com/nint8835/parsley v1.0.1 h1:DmzsYN7LgPyWggbUZ3b4jghKQeWmi7sJQ0bAf9l+IAA=
+github.com/nint8835/parsley v1.0.1/go.mod h1:2R+cXHN1chnxFV/nNCfn0XsI+jusZryIpNDDMpGIfb0=
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
