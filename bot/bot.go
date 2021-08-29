@@ -12,6 +12,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/lukasl-dev/waterlink"
+	"github.com/lukasl-dev/waterlink/entity/track"
 	"github.com/nint8835/parsley"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -26,6 +27,19 @@ type Config struct {
 	LavalinkHost       string `default:"localhost:2333" split_words:"true"`
 }
 
+type QueueItem struct {
+	User  *discordgo.User
+	Track track.Track
+}
+
+type GuildState struct {
+	Queue         []QueueItem
+	TextChannelID string
+
+	TrackQueued chan struct{}
+	TrackEnded  chan struct{}
+}
+
 type Instance struct {
 	Session       *discordgo.Session
 	Config        Config
@@ -33,12 +47,16 @@ type Instance struct {
 
 	LavalinkConnection waterlink.Connection
 	LavalinkRequester  waterlink.Requester
+
+	State map[string]*GuildState
 }
 
 var Bot *Instance
 
 func Start() error {
-	Bot = &Instance{}
+	Bot = &Instance{
+		State: make(map[string]*GuildState),
+	}
 
 	err := godotenv.Load()
 	if err != nil {
@@ -97,6 +115,8 @@ func Start() error {
 		reqOpts,
 	)
 	Bot.LavalinkRequester = req
+
+	go lavalinkEventHandler()
 
 	registerHandlers()
 	registerCommands()
