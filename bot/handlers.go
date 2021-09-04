@@ -45,6 +45,8 @@ func voiceConnectionHandler(guildId string) {
 			break
 		}
 
+		guildState.NowPlaying = nil
+
 		select {
 		case <-guildState.TrackQueued:
 			track := guildState.Queue[0]
@@ -55,6 +57,7 @@ func voiceConnectionHandler(guildId string) {
 				Bot.Session.ChannelMessageSend(guildState.TextChannelID, "Failed to play track: "+err.Error())
 				return
 			}
+			guildState.NowPlaying = &track
 			Bot.Session.ChannelMessageSend(guildState.TextChannelID, fmt.Sprintf("Now playing: %s", track.Track.Info.Title))
 		}
 	}

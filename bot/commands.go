@@ -12,8 +12,11 @@ import (
 func registerCommands() {
 	Bot.CommandParser.NewCommand("join", "Join a voice channel", joinChannelCommand)
 	Bot.CommandParser.NewCommand("play", "Play a track", playCommand)
+	Bot.CommandParser.NewCommand("p", "Play a track", playCommand)
 	Bot.CommandParser.NewCommand("skip", "Skip the current track", skipCommand)
 	Bot.CommandParser.NewCommand("queue", "Show the current queue", queueCommand)
+	Bot.CommandParser.NewCommand("q", "Show the current queue", queueCommand)
+	Bot.CommandParser.NewCommand("np", "Show the current track", npCommand)
 }
 
 func joinVoiceChannel(guildId string, channelId string, sourceTextChannelId string) error {
@@ -80,14 +83,16 @@ func playCommand(message *discordgo.MessageCreate, args PlayCommandArgs) {
 	}
 	track := resp.Tracks[0]
 
+	if guildState.NowPlaying != nil {
+		Bot.Session.ChannelMessageSend(message.ChannelID, fmt.Sprintf("Queued track: %s", track.Info.Title))
+	}
+
 	guildState.Queue = append(guildState.Queue, QueueItem{
 		User:  message.Author,
 		Track: track,
 		Query: args.Query,
 	})
 	guildState.TrackQueued <- struct{}{}
-
-	Bot.Session.ChannelMessageSend(message.ChannelID, fmt.Sprintf("Queued track: %s", track.Info.Title))
 }
 
 func skipCommand(message *discordgo.MessageCreate, args struct{}) {
@@ -139,4 +144,28 @@ func queueCommand(message *discordgo.MessageCreate, args struct{}) {
 	}
 
 	Bot.Session.ChannelMessageSendEmbed(message.ChannelID, queueEmbed)
+}
+
+func npCommand(message *discordgo.MessageCreate, args struct{}) {
+	_, found := Bot.State[message.GuildID]
+	if !found {
+		Bot.Session.ChannelMessageSend(message.ChannelID, ":no_entry_sign:")
+		return
+	}
+
+	if Bot.State[message.GuildID].NowPlaying == nil {
+		Bot.Session.ChannelMessageSend(message.ChannelID, "Nothing is currently playing.")
+		return
+	}
+
+	embed := &discordgo.MessageEmbed{
+		Title: Bot.State[message.GuildID].NowPlaying.Track.Info.Title,
+		Color: (240 << 16) + (200 << 8) + (255),
+		Description: fmt.Sprintf(
+			"Requested by: %s\nInitial query: %s",
+			Bot.State[message.GuildID].NowPlaying.User.Mention(),
+			Bot.State[message.GuildID].NowPlaying.Query,
+		),
+	}
+	Bot.Session.ChannelMessageSendEmbed(message.ChannelID, embed)
 }

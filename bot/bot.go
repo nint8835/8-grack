@@ -36,6 +36,7 @@ type QueueItem struct {
 type GuildState struct {
 	Queue         []QueueItem
 	TextChannelID string
+	NowPlaying    *QueueItem
 
 	TrackQueued chan struct{}
 	TrackEnded  chan struct{}
