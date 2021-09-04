@@ -30,6 +30,7 @@ type Config struct {
 type QueueItem struct {
 	User  *discordgo.User
 	Track track.Track
+	Query string
 }
 
 type GuildState struct {

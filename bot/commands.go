@@ -3,14 +3,17 @@ package bot
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/hako/durafmt"
 )
 
 func registerCommands() {
 	Bot.CommandParser.NewCommand("join", "Join a voice channel", joinChannelCommand)
 	Bot.CommandParser.NewCommand("play", "Play a track", playCommand)
 	Bot.CommandParser.NewCommand("skip", "Skip the current track", skipCommand)
+	Bot.CommandParser.NewCommand("queue", "Show the current queue", queueCommand)
 }
 
 func joinVoiceChannel(guildId string, channelId string, sourceTextChannelId string) error {
@@ -56,7 +59,7 @@ func joinChannelCommand(message *discordgo.MessageCreate, args struct{}) {
 }
 
 type PlayCommandArgs struct {
-	URL string
+	Query string
 }
 
 func playCommand(message *discordgo.MessageCreate, args PlayCommandArgs) {
@@ -66,7 +69,7 @@ func playCommand(message *discordgo.MessageCreate, args PlayCommandArgs) {
 		return
 	}
 
-	resp, err := Bot.LavalinkRequester.LoadTracks(args.URL)
+	resp, err := Bot.LavalinkRequester.LoadTracks(args.Query)
 	if err != nil {
 		Bot.Session.ChannelMessageSend(message.ChannelID, "Failed to load track: "+err.Error())
 		return
@@ -80,8 +83,11 @@ func playCommand(message *discordgo.MessageCreate, args PlayCommandArgs) {
 	guildState.Queue = append(guildState.Queue, QueueItem{
 		User:  message.Author,
 		Track: track,
+		Query: args.Query,
 	})
 	guildState.TrackQueued <- struct{}{}
+
+	Bot.Session.ChannelMessageSend(message.ChannelID, fmt.Sprintf("Queued track: %s", track.Info.Title))
 }
 
 func skipCommand(message *discordgo.MessageCreate, args struct{}) {
@@ -92,4 +98,45 @@ func skipCommand(message *discordgo.MessageCreate, args struct{}) {
 	}
 
 	Bot.LavalinkConnection.Stop(message.GuildID)
+}
+
+func queueCommand(message *discordgo.MessageCreate, args struct{}) {
+	_, found := Bot.State[message.GuildID]
+	if !found {
+		Bot.Session.ChannelMessageSend(message.ChannelID, ":no_entry_sign:")
+		return
+	}
+
+	trackFields := []*discordgo.MessageEmbedField{}
+
+	totalDuration := uint(0)
+
+	for index, track := range Bot.State[message.GuildID].Queue {
+		trackFields = append(trackFields, &discordgo.MessageEmbedField{
+			Name:  fmt.Sprintf("%d. %s", index+1, track.Track.Info.Title),
+			Value: fmt.Sprintf("Requested by: %s\nInitial query: %s", track.User.Mention(), track.Query),
+		})
+		totalDuration += track.Track.Info.Length
+	}
+
+	trackCountSuffix := ""
+
+	if len(Bot.State[message.GuildID].Queue) != 1 {
+		trackCountSuffix = "s"
+	}
+
+	queueEmbed := &discordgo.MessageEmbed{
+		Title:  "Queue",
+		Fields: trackFields,
+		Color:  (120 << 16) + (195 << 8) + (255),
+		Footer: &discordgo.MessageEmbedFooter{
+			Text: fmt.Sprintf(
+				"%d track%s, totalling %s",
+				len(Bot.State[message.GuildID].Queue),
+				trackCountSuffix,
+				durafmt.Parse(time.Duration(totalDuration)*time.Millisecond)),
+		},
+	}
+
+	Bot.Session.ChannelMessageSendEmbed(message.ChannelID, queueEmbed)
 }
