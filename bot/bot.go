@@ -84,7 +84,7 @@ func Start() error {
 	if err != nil {
 		return fmt.Errorf("error creating Discord session: %w", err)
 	}
-	session.Identify.Intents = discordgo.IntentsAllWithoutPrivileged
+	session.Identify.Intents = discordgo.IntentsAllWithoutPrivileged | discordgo.IntentGuildMessages | discordgo.IntentsMessageContent
 	Bot.Session = session
 
 	log.Debug().Msg("Creating command parser")
