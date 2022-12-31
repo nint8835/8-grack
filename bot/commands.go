@@ -17,6 +17,7 @@ func registerCommands() {
 	Bot.CommandParser.NewCommand("queue", "Show the current queue", queueCommand)
 	Bot.CommandParser.NewCommand("q", "Show the current queue", queueCommand)
 	Bot.CommandParser.NewCommand("np", "Show the current track", npCommand)
+	Bot.CommandParser.NewCommand("seek", "Seek within the current track", seekCommand)
 }
 
 func joinVoiceChannel(guildId string, channelId string, sourceTextChannelId string) error {
@@ -168,4 +169,28 @@ func npCommand(message *discordgo.MessageCreate, args struct{}) {
 		),
 	}
 	Bot.Session.ChannelMessageSendEmbed(message.ChannelID, embed)
+}
+
+type SeekCommandArgs struct {
+	Target string `description:"Target duration to seek to"`
+}
+
+func seekCommand(message *discordgo.MessageCreate, args SeekCommandArgs) {
+	_, found := Bot.State[message.GuildID]
+	if !found {
+		Bot.Session.ChannelMessageSend(message.ChannelID, ":no_entry_sign:")
+		return
+	}
+
+	targetDuration, err := time.ParseDuration(args.Target)
+	if err != nil {
+		Bot.Session.ChannelMessageSend(message.ChannelID, "Failed to parse duration: "+err.Error())
+		return
+	}
+
+	err = Bot.LavalinkConnection.Seek(message.GuildID, uint(targetDuration.Milliseconds()))
+	if err != nil {
+		Bot.Session.ChannelMessageSend(message.ChannelID, "Failed to seek: "+err.Error())
+		return
+	}
 }
